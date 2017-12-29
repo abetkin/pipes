@@ -2,52 +2,26 @@
 
 defmodule M do
     
-
-    def main do
-        # hanfle 1 mod
-        # split into layers
-        state = %{
-            State: %{a: 1},
-            M1: %{b: 2},
-        }
-        eval = [State]
-        li = [State, M1, M2, X]
-        fn m ->
-            #
-        end
-
-
-        l1 = [State]
-        l2 = [Mod1]
-        l3 = [Mod2]
-    end
-
-    def eval(mod, mod_deps, state) do
-        deps = mod_deps[mod]
-        |> Enum.map(fn d -> state[d] end)
-        # Execute the "run" method
-        apply(mod, :run, deps)
-    end
-
-    def f(layers, mod_deps \\ %{
-        Mod1: [State],
-    }) do
-        # mod_deps is a const (map)
-        layers = [top | down_layers]
-        state = {}
-        # accumulate state, reduce
-        process_layer = fn layer ->
-            Enum.map layer, fn m ->
-                eval(m, mod_deps, state)
+    def run(mod, state, %{get_deps: get_deps, layers: layers}) do
+        eval_mod = fn mod, cache ->
+            args = Enum.map get_deps.(mod), fn dep ->
+                cache[dep]
             end
+            apply(mod, :run, args)
         end
+        eval_mod
+
     end
 
-    # def f do
-    #     [1, 3, 4]
-    #     |> Enum.filter(fn m ->
-    #         m != 3
-    #     end)
-    #     |> Enum.map(fn e -> e end)
+    def build_pipeline(%{get_deps: get_deps, layers: layers} = config) do
+        # config for now:
+        fn mod, state ->
+            run(mod, state, config)
+        end
+    end
+    
+    # def api do
+    #     run = build_pipeline get_deps
+    #     run Mod, %{a: :state} 
     # end
 end
