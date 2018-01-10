@@ -55,27 +55,27 @@ end
 defmodule PipesTest do
   use ExUnit.Case
 
-    setup _ do
-      %{
-        get_deps: fn mod ->
-          MAP = %{
-            Mod1 => [],
-            Mod2 => [Mod1]
-          }
-          MAP[mod]
-        end, 
-        layers: [
-          [Mod1],
-          [Mod2],
-          [Main],
-        ],
-      }
-    end
+  setup _ do
+    %{
+      get_deps: fn mod ->
+        MAP = %{
+          Mod1 => [],
+          Mod2 => [Mod1]
+        }
+        MAP[mod]
+      end, 
+      layers: [
+        [Mod1],
+        [Mod2],
+        [Main],
+      ],
+    }
+  end
 
-    test "1", ctx do
-      run = M.build_pipeline ctx
-      run M2, %{flag: true}
-    end
+  test "all", ctx do
+    run = M.build_pipeline ctx
+    run.(M2, %{flag: true})
+  end
 
 
 end
