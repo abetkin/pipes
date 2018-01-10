@@ -1,3 +1,4 @@
 {
-    "editor.renderIndentGuides": false
+    "editor.renderIndentGuides": false,
+    "editor.tabSize": 2
 }

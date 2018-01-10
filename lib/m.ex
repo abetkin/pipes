@@ -1,6 +1,9 @@
 
 
 defmodule M do
+    @doc """
+    
+    """
     
     def run(mod, state, %{get_deps: get_deps, layers: layers}) do
         eval_mod = fn mod, cache ->
@@ -9,7 +12,12 @@ defmodule M do
             end
             apply(mod, :run, args)
         end
-        eval_mod
+        # Enum.map layers, fn layer ->
+        #     new_cache = Enum.map layer, eval_mod.(&1, cache)
+        #     cache = Map.merge cache, new_cache
+        #     eval cache, new_layers
+
+        # end
 
     end
 
