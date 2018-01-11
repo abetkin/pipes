@@ -7,6 +7,14 @@ defmodule M do
   
   """
   
+  #TODO
+  def eval_mod(mod, deps, cache) do
+    args = Enum.map get_deps.(mod), fn dep ->
+        cache[dep]
+    end
+    apply(mod, :run, args)
+  end
+
   def run(mod, state, %{get_deps: get_deps, layers: layers}) do
     eval_mod = fn mod, cache ->
         args = Enum.map get_deps.(mod), fn dep ->
