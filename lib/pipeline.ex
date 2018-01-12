@@ -1,22 +1,45 @@
+defmodule State do
+  # a marker
+end
+
+defmodule Pipeline.Compile do
+  # compile time
+  def get_layers(mod, get_deps, resolved, els) do
+    start = [State]
+    lr0 = for mod <- all_modules do
+      get_deps.(mod)
+    end
+  end
+
+end
 
 
 defmodule Pipeline do
-  # require IEx
 
   @doc """
   
   """
 
+  
+
   defstruct [
-    :get_deps, # fn mod -> [] end
+    :mod,
     :layers, # []
+    :get_deps, # fn mod -> [] end
+    
   ]
 
+
+
   def get_fun_layers(%Pipeline{} = pp, mod) do
+    get_deps = fn
+      State -> []
+      mod -> pp.get_deps.(mod)
+    end
     for layer <- pp.layers do
       for mod <- layer do
         fn state ->
-          args = for dep <- pp.get_deps.(mod),
+          args = for dep <- get_deps.(mod),
             do: state[dep]
           %{mod => apply(mod, :run, args)}
         end
