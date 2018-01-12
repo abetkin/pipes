@@ -1,3 +1,5 @@
+# TODO State const
+
 defmodule Mod1 do
 
   def run do
@@ -11,70 +13,68 @@ end
 
 defmodule Mod2 do
   
-  @dep [State, Mod1]
-  def run(state, mod1) do
-    if state.flag do
-      %{mod2: :mod2}
-    else
-      %{}
-    end
+  @dep [Mod1]
+  def run(mod1) do
+    %{mod2: :mod2}
   end
-
 end
 
+defmodule Mod3 do
+  
+  @dep [Mod1]
+  def run(mod1) do
+    mod1.mod1
+    %{mod3: :mod3}
+  end
+end
 
 
 
 defmodule Main do
 
-  @dep [Mod1, Mod2]
-  def run(mod1, mod2) do
-    Map.merge mod1, mod2
+  @dep [Mod1, Mod2, Mod3]
+  def run(mod1, mod2, mod3) do
+    mod1 |> Map.merge(mod2)
+    |> Map.merge(mod3)
   end
 end
 
 
-####
-
-# defmodule SimpleTest do
-#   use ExUnit.Case
-
-#     setup _ do
-#       %{cache: %{
-#         State => %{a: state}
-#       }}
-#     end
-
-#     test "1", ctx do
-#       assert ctx.a == :state
-#     end
+###
 
 
-# end
+# deps, layers, mod -> Pipeline
 
 defmodule PipesTest do
   use ExUnit.Case
 
   setup _ do
     %{
-      get_deps: fn mod ->
-        MAP = %{
-          Mod1 => [],
-          Mod2 => [Mod1]
-        }
-        MAP[mod]
-      end, 
-      layers: [
-        [Mod1],
-        [Mod2],
-        [Main],
-      ],
+      pp: %Pipeline{
+        get_deps: fn mod ->
+          %{
+            Mod1 => [],
+            Mod2 => [Mod1],
+            Mod3 => [Mod1],
+            Main => [Mod1, Mod2, Mod3],
+          }[mod]
+        end, 
+        layers: [
+          [Mod1],
+          [Mod2, Mod3],
+        ],
+      }
     }
   end
 
-  test "all", ctx do
-    run = M.build_pipeline ctx
-    run.(M2, %{flag: true})
+  test "all", %{pp: pp} do
+    res = Pipeline.run(pp, Main, %{flag: true})
+    assert res == %{mod1: :mod1, mod2: :mod2, mod3: :mod3}
+  end
+
+  test "fun layers", %{pp: pp} do
+    fun_layers = Pipeline.get_fun_layers pp, Main
+    assert Kernel.length(fun_layers) == Kernel.length(pp.layers)
   end
 
 
