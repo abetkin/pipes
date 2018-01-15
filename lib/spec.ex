@@ -21,6 +21,8 @@ defmodule M do
 
   def test do
     req {:http, :params}
+    gql {:user, [a: :b]}
+    # can be in the same namespace
   end
 
 end
