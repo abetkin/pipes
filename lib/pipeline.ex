@@ -50,7 +50,6 @@ defmodule Pipeline do
   
 
   defstruct [
-    :mod,
     :layers, # []
     :get_deps, # fn mod -> [] end
     
