@@ -25,8 +25,8 @@ defmodule M do
     # can be in the same namespace
   end
 
-  def users(f, {:users, [filter: [par: par]]}) do
-    dep fn %{"http.params": p} ->
+  dep %{http: params} do
+    def [:some | path] do
     end
   end
 
