@@ -1,85 +1,85 @@
-# TODO State const
+# # TODO State const
 
-defmodule Mod1 do
+# defmodule Mod1 do
 
-  def run do
-    %{
-      mod1: :mod1
-    }
-  end
+#   def run do
+#     %{
+#       mod1: :mod1
+#     }
+#   end
 
-end
+# end
 
 
-defmodule Mod2 do
+# defmodule Mod2 do
   
-  @dep [Mod1, State]
-  def run(mod1, state) do
-    ret = %{}
-    if state[:flag] do
-      ret = %{mod2: :mod2}
-    end
-    ret
-  end
-end
+#   @dep [Mod1, State]
+#   def run(mod1, state) do
+#     ret = %{}
+#     if state[:flag] do
+#       ret = %{mod2: :mod2}
+#     end
+#     ret
+#   end
+# end
 
-defmodule Mod3 do
+# defmodule Mod3 do
   
-  @dep [Mod1]
-  def run(mod1) do
-    mod1.mod1
-    %{mod3: :mod3}
-  end
-end
+#   @dep [Mod1]
+#   def run(mod1) do
+#     mod1.mod1
+#     %{mod3: :mod3}
+#   end
+# end
 
 
 
-defmodule Main do
+# defmodule Main do
 
-  @dep [Mod1, Mod2, Mod3]
-  def run(mod1, mod2, mod3) do
-    mod1 |> Map.merge(mod2)
-      |> Map.merge(mod3)
-  end
-end
-
-
-###
+#   @dep [Mod1, Mod2, Mod3]
+#   def run(mod1, mod2, mod3) do
+#     mod1 |> Map.merge(mod2)
+#       |> Map.merge(mod3)
+#   end
+# end
 
 
-defmodule PipesTest do
-  use ExUnit.Case
-
-  setup _ do
-    %{
-      pp: %Pipeline{
-        get_deps: fn mod ->
-          %{
-            State => [],
-            Mod1 => [],
-            Mod2 => [Mod1, State],
-            Mod3 => [Mod1],
-            Main => [Mod1, Mod2, Mod3],
-          }[mod]
-        end, 
-        layers: [
-          [Mod1],
-          [Mod2, Mod3],
-        ],
-      }
-    }
-  end
-
-  test "all", %{pp: pp} do
-    res = Pipeline.run(pp, Main, %{flag: true})
-    assert res == %{mod1: :mod1, mod2: :mod2, mod3: :mod3}
-  end
-
-  test "fun layers", %{pp: pp} do
-    fun_layers = Pipeline.get_fun_layers pp, Main
-    assert Kernel.length(fun_layers) == Kernel.length(pp.layers)
-  end
+# ###
 
 
-end
+# defmodule PipesTest do
+#   use ExUnit.Case
+
+#   setup _ do
+#     %{
+#       pp: %Pipeline{
+#         get_deps: fn mod ->
+#           %{
+#             State => [],
+#             Mod1 => [],
+#             Mod2 => [Mod1, State],
+#             Mod3 => [Mod1],
+#             Main => [Mod1, Mod2, Mod3],
+#           }[mod]
+#         end, 
+#         layers: [
+#           [Mod1],
+#           [Mod2, Mod3],
+#         ],
+#       }
+#     }
+#   end
+
+#   test "all", %{pp: pp} do
+#     res = Pipeline.run(pp, Main, %{flag: true})
+#     assert res == %{mod1: :mod1, mod2: :mod2, mod3: :mod3}
+#   end
+
+#   test "fun layers", %{pp: pp} do
+#     fun_layers = Pipeline.get_fun_layers pp, Main
+#     assert Kernel.length(fun_layers) == Kernel.length(pp.layers)
+#   end
+
+
+# end
 

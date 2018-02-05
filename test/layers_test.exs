@@ -21,7 +21,7 @@ defmodule LayersTest do
 
   test "main", %{get_deps: get_deps} do
     modules = [:Mod1, :Main]
-    layers = Compile.get_layers(modules, get_deps)
+    layers = Resolver.run(:Main, get_deps)
     assert layers == [[:Main], [:Mod3], [:Mod2], [:Mod1]]
   end
 
