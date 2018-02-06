@@ -25,6 +25,16 @@ defmodule LayersTest do
     assert layers == [[:Main], [:Mod3], [:Mod2], [:Mod1]]
   end
 
+  test "cycle deps" do
+    get_deps = fn mod ->
+      %{
+        a: [:b],
+        b: [:a],
+      }[mod]
+    end
+    Flattener.run(:a, get_deps)
+  end
+
 
 end
 

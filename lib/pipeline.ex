@@ -1,8 +1,5 @@
-defmodule State do
-  # a marker
-end
 
-defmodule Resolver do
+defmodule Resolver1 do
   #TODO Check for cycle deps should be done separately
   # hint: if new cycles don't give new modules
   
@@ -16,52 +13,27 @@ defmodule Resolver do
     %{
       modules: get_deps.(mod),
       get_deps: get_deps,
-      ordered: [],
+      result: [],
+      processed: MapSet.new,
       failures: 0,
     }
     |> get_order
   end
   
-  def get_order(%{modules: [], ordered: ordered}), do:
-    ordered
-    |> MapSet.new
-    |> MapSet.to_list
-  # def get_layers %Resolver{} = r do
-  #   # resolved = case resolved do
-  #   #   nil -> MapSet.new [State]
-  #   #   v -> v
-  #   # end
-  #   modules = r.modules
-  #   |> Enum.map(fn m ->
-  #     deps = get_deps.(m)
-  #     Enum.filter(deps, fn m -> m in r.modules end)
-  #   end)
-  #   |> List.flatten |> MapSet.new
-  #   |> MapSet.union(MapSet.new modules)
-  #   # get the next layer
-  #   {layer, rest} = Enum.split_with(modules, fn mod ->
-  #     deps = get_deps.(mod) |> MapSet.new
-  #     MapSet.subset?(deps, resolved)
-  #   end)
-  #   resolved = layer |> MapSet.new |> MapSet.union(resolved)
-  #   layers = case layers do
-  #     nil -> [layer]
-  #     _ -> [layer|layers]
-  #   end
-  #   get_layers(rest, get_deps, layers, resolved)
-  # end
-  
-  # def get_order(%{result: result}) when length(result) > 3 do
-  #   get_order %{r|
-  #     result: Enum.concat(result)
-  #   }
-  # end
-
-  # TODO mapset as ordered
+  def get_order(%{modules: [], result: result}), do:
+    result
+    |> Enum.concat
+    |> Enum.unique
 
   def get_order(%{failures: 3} = r) do
-    throw r.modules
+    IO.puts "resolved:"
+    IO.inspect r.processed
+    IO.puts "unresolved:"
+    IO.inspect r.modules
+    throw "Cyclic deps"
   end
+
+  # dep in modules
 
   def get_order(%{modules: modules} = r) do
     # find modules without deps
@@ -69,20 +41,18 @@ defmodule Resolver do
       Kernel.length(r.get_deps.(m)) == 0
     end)
     # flatten the rest
-    ordered = case length(resolvable) do
-      0 -> r.ordered
-      _ -> r.ordered ++ resolvable
+    processed = case length(resolvable) do
+      0 -> r.processed
+      _ -> MapSet.new(MapSet.to_list(r.processed) ++ resolvable)
     end
     rest_deps = for m <- rest do
       r.get_deps.(m)
-    end |> Enum.concat
-    |> Enum.filter(fn m ->
-      m not in ordered
-    end)
-    new_modules = MapSet.new(rest_deps ++ rest)
-    r = %{r|ordered: ordered}
-    #TODO
-    Resolver.get_order(r, resolvable, new_modules)
+      |> Enum.filter(fn dep -> dep not in processed end)
+    end
+    |> Enum.concat
+    r = %{r|processed: processed}
+    modules = MapSet.new(rest_deps ++ rest)
+    Resolver.get_order(r, resolvable, modules)
   end
   
   def get_order(r, [], rest) do
@@ -93,16 +63,8 @@ defmodule Resolver do
   end
 
   def get_order(r, resolvable, rest) do
-    # flatten the rest
-    ordered = r.ordered ++ resolvable
-    rest_deps = for m <- rest do
-      r.get_deps.(m)
-    end |> Enum.concat
-    |> Enum.filter(fn m ->
-      m not in r.ordered
-    end)
     Resolver.get_order %{r|
-      ordered: ,
+      result: [resolvable | r.result],
       modules: rest,
     }
   end
