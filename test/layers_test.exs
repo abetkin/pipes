@@ -19,21 +19,37 @@ defmodule LayersTest do
       }
   end
 
-  test "main", %{get_deps: get_deps} do
-    modules = [:Mod1, :Main]
-    layers = Resolver.run(:Main, get_deps)
-    assert layers == [[:Main], [:Mod3], [:Mod2], [:Mod1]]
-  end
+  # test "main", %{get_deps: get_deps} do
+  #   modules = [:Mod1, :Main]
+  #   layers = Resolver.run(:Main, get_deps)
+  #   assert layers == [[:Main], [:Mod3], [:Mod2], [:Mod1]]
+  # end
 
-  test "cycle deps" do
+  test "simple" do
     get_deps = fn mod ->
       %{
         a: [:b],
-        b: [:a],
+        b: [:c],
+        c: [],
       }[mod]
     end
-    Flattener.run(:a, get_deps)
+    # 
+    Flattener.flatten(:a, get_deps)
+    |> IO.inspect
   end
+
+  # test "cycle deps" do
+  #   get_deps = fn mod ->
+  #     %{
+  #       a: [:b],
+  #       b: [:a],
+  #     }[mod]
+  #   end
+  #   # 
+  #   catch_error(
+  #       Flattener.flatten(:a, get_deps)
+  #   )
+  # end
 
 
 end
