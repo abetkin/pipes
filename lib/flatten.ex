@@ -22,6 +22,7 @@ defmodule Flatten do
   end
 
   def flatten(list, opts) when is_list(list) do
+    #FIXME append(list)
     result = opts.result |> AppendList.extend(list)
     repeat = if AppendList.same(result, opts.result) do
       opts.repeat + 1
