@@ -6,7 +6,7 @@ defmodule Flatten do
   def flatten(node, fun) when is_function(fun) do
     opts = %{
       fun: fun,
-      result: AppendList.new,
+      result: LoL.new,
       repeat: 0,
     }
     nodes = fun.(node)
@@ -22,9 +22,8 @@ defmodule Flatten do
   end
 
   def flatten(list, opts) when is_list(list) do
-    #FIXME append(list)
-    result = opts.result |> AppendList.extend(list)
-    repeat = if AppendList.same(result, opts.result) do
+    result = opts.result |> LoL.add(list)
+    repeat = if result |> LoL.changed(opts.result) do
       opts.repeat + 1
     else
       opts.repeat

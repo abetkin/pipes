@@ -32,3 +32,45 @@ defmodule AppendList do
     self.list == other.list
   end
 end
+
+
+defmodule LoL do
+
+  defstruct [:set, :list]
+
+  def new do
+    %{
+      set: MapSet.new,
+      list: []
+    }
+  end
+
+  def new(items) do
+    new |> add(items)
+  end
+
+  def add(self, items) when is_list(items) do
+    new_set = MapSet.to_list(self.set) ++ items
+    |> MapSet.new
+    if MapSet.size(new_set) == MapSet.size(self.set) do
+      self
+    else
+      dif = new_set |> MapSet.difference(self.set)
+      if dif == MapSet.new([:b, :c]) do
+        require IEx
+        IEx.pry
+      end
+      items = items
+      |> Enum.filter(fn i -> i in dif end)
+      |> Enum.uniq
+      %{
+        set: new_set,
+        list: [items | self.list]
+      }
+    end
+  end
+
+  def changed(rev1, rev2) do
+    MapSet.size(rev1.set) == MapSet.size(rev2.set)
+  end
+end
