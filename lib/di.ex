@@ -5,19 +5,33 @@ defmodule Di do
 
   defmacro __using__(_) do
     quote do
-      Module.register_attribute __MODULE__, :di_functions,
-        accumulate: true, persist: true
       import Di
+      Module.register_attribute __MODULE__, :defdi,
+        accumulate: true
+      Module.register_attribute __MODULE__, :deps,
+        accumulate: true, persist: true
+      @before_compile Di
       
     end
   end
 
+  def __before_compile__(env) do
+    info = env.module |> Module.get_attribute(:defdi)
+    for arg <- info.args do
+      arg |> IO.inspect
+    end
+    # deps = for arg <- info.args do
+      
+    #   %{struct: {s, _}, var: _} = arg
+    #   s
+    # end
+    # Module.put_attribute(env.module, :deps, deps)
+  end
+
   def parse_arg {:=, _, [struct, var]} do
     var = elem(var, 0)
-    %{
-      struct: parse_arg(struct),
-      var: var,
-    }
+    parse_arg(struct)
+    |> Map.put(:var, var)
   end
   
   def parse_arg {:%, _, [alias, map]} = struct do
@@ -35,10 +49,9 @@ defmodule Di do
 
   defmacro defdi(head, body) do
     info = parse_declaration(head)
-    # Module.put_attribute(TryDi, :di_functions, info)
-    Module.put_attribute(TryDi, :di_functions, :name)
+
     quote do
-      # @di_functions unquote(info)
+      @defdi unquote(info |> Macro.escape)
       def(unquote(head), unquote(body))
     end
   end
@@ -90,13 +103,17 @@ end
 defmodule TryDi do
   use Di
   
-  defdi f(%Params{a: a}, %User{b: b}) do
-    return 1
+  # defdi f(%Params{a: a}, %User{b: b}) do
+  #   1
+  # end
+
+  defdi run(%User{} = u) do
+    u.name
   end
 
-  def t do
-    # run TryDi, %{param_a: 5}
-  end
 
+  # def t do
+  #   run TryDi, %{"param_login" => "me", "param_password" => "myself"}
+  # end
 end
 
