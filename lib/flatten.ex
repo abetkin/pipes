@@ -14,18 +14,19 @@ defmodule Flatten do
   end
 
   def make(result) do
-    result |> Enum.reduce(%{list: [], set: MapSet.new}, fn items, acc ->
+    result = result |> Enum.reduce(%{list: [], set: MapSet.new}, fn items, acc ->
       item = items |> MapSet.new |> MapSet.difference(acc.set)
       %{
         list: [item |> MapSet.to_list | acc.list],
         set: acc.set |> MapSet.union(item)
       }
     end)
+    result.list |> Enum.reverse
   end
 
   def flatten([], %{result: result}) do
     # build result
-    make(result).list |> Enum.reverse
+    make(result)
   end
 
   def flatten(list, %{iteration: iteration}) when iteration == @max_iterations do

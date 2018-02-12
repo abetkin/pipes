@@ -5,12 +5,23 @@ defmodule Di do
 
   defmacro __using__(_) do
     quote do
-      Module.register_attribute __MODULE__, :di_functions,
-        accumulate: true, persist: true
       import Di
-      
+      @di_functions []
+      @before_compile Di
+      # @on_definition Di
     end
   end
+
+  defmacro __before_compile__(env) do
+    env.module |> IO.inspect(label: "a")
+    Module.register_attribute env.module, :di_functions,
+        accumulate: true, persist: true
+  end
+
+  # def __on_definition__(env, kind, name, args, guards, body) do
+  #   import IEx
+  #   IEx.pry
+  # end
 
   def parse_arg {:=, _, [struct, var]} do
     var = elem(var, 0)
@@ -35,12 +46,14 @@ defmodule Di do
 
   defmacro defdi(head, body) do
     info = parse_declaration(head)
+    # Module.put_attribute(TryDi, :vsn, 11)
     # Module.put_attribute(TryDi, :di_functions, info)
-    Module.put_attribute(TryDi, :di_functions, :name)
+    list = [:a, 2]
     quote do
-      # @di_functions unquote(info)
+      @di_functions unquote(list)
       def(unquote(head), unquote(body))
     end
+    nil
   end
 
   defp parse_declaration(head) do
@@ -91,12 +104,9 @@ defmodule TryDi do
   use Di
   
   defdi f(%Params{a: a}, %User{b: b}) do
-    return 1
+    1
   end
 
-  def t do
-    # run TryDi, %{param_a: 5}
-  end
 
 end
 
