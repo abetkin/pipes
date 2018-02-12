@@ -112,6 +112,7 @@ defmodule TryDi do
   end
 
 
+
   # def t do
   #   run TryDi, %{"param_login" => "me", "param_password" => "myself"}
   # end
