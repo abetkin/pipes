@@ -17,15 +17,14 @@ defmodule Di do
 
   def __before_compile__(env) do
     info = env.module |> Module.get_attribute(:defdi)
-    for arg <- info.args do
-      arg |> IO.inspect
+    deps = for fun <- info do
+      for arg <- fun.args do
+        %{struct: {mod_name, _}} = arg
+        Module.concat([mod_name])
+      end
     end
-    # deps = for arg <- info.args do
-      
-    #   %{struct: {s, _}, var: _} = arg
-    #   s
-    # end
-    # Module.put_attribute(env.module, :deps, deps)
+    |> Enum.concat
+    Module.put_attribute(env.module, :deps, deps)
   end
 
   def parse_arg {:=, _, [struct, var]} do
@@ -46,7 +45,6 @@ defmodule Di do
     }
   end
 
-
   defmacro defdi(head, body) do
     info = parse_declaration(head)
 
@@ -65,6 +63,31 @@ defmodule Di do
       name: fun_name,
       args: args,
     }
+  end
+
+  def get_deps(mod) do
+    for attr <- mod.__info__(:attributes) do
+      case attr do
+        {:deps, v} -> v
+        _ -> []
+      end
+    end
+    |> Enum.concat
+  end
+
+  # def run(mod, dic) do
+  def run(mod) do
+    
+    layers = Flatten.flatten(mod, &get_deps/1)
+    for deps <- layers do
+      #TODO
+    end
+  end
+
+  def build_args(mod, state, get_deps) do
+    for mod <- get_deps.(mod) do
+      state[mod]
+    end
   end
 
 end
