@@ -56,8 +56,12 @@ defmodule Di do
 
   defp parse_declaration(head) do
     {fun_name, _, args} = head
-    args = for arg <- args do
-      parse_arg(arg)
+    args = args |> case do
+      nil -> []
+      _ -> 
+        for arg <- args do
+          parse_arg(arg)
+        end
     end
     %{
       name: fun_name,
@@ -77,16 +81,54 @@ defmodule Di do
 
   # def run(mod, dic) do
   def run(mod) do
-    
+    Run.run(mod)
+  end
+
+end
+
+
+defmodule Run do
+  def run(mod) do
     layers = Flatten.flatten(mod, &get_deps/1)
-    for deps <- layers do
-      #TODO
+    layers ++ [[mod]]
+    |> get_state
+    |> case do
+      state -> state[mod]
     end
   end
 
-  def build_args(mod, state, get_deps) do
-    for mod <- get_deps.(mod) do
-      state[mod]
+  def get_deps(mod) do
+    for attr <- mod.__info__(:attributes) do
+      attr
+      |> IO.inspect(label: :attr)
+      |> case do
+        {:deps, v} -> v
+        _ -> []
+      end
+    end
+    |> Enum.concat
+    |> IO.inspect(label: :deps)
+  end
+
+  def get_state(layers) do
+    layers |> Enum.reduce(%{}, fn deps, state ->
+      state
+      |> get_state(deps)
+      |> Map.merge(state)
+    end)
+  end
+
+  def get_state(state, deps) do
+    for mod <- deps do
+      args = get_args(mod, state)
+      {mod, apply(mod, :run, args)}
+    end
+    |> Map.new
+  end
+
+  def get_args(mod, state) do
+    for m <- get_deps(mod) do
+      state[m]
     end
   end
 
@@ -94,28 +136,33 @@ end
 
 
 defmodule Params do
-  defstruct [:a, :b] # TODO
+  use Di
+  defstruct [:login, :password] # TODO
 
-  def run %{} = dic do
-    for {k, v} <- dic |> Map.to_list do
-      case k do
-        "param_" <> k -> {k, v}
-        # :param_ <> k -> {k, v}
-        _ -> nil
-      end
-    end
-    |> Enum.filter(fn x -> not is_nil(x) end)
-    |> Map.new
-    
+  # def run %{} = dic do
+  #   for {k, v} <- dic |> Map.to_list do
+  #     case k do
+  #       "param_" <> k -> {k, v}
+  #       # :param_ <> k -> {k, v}
+  #       _ -> nil
+  #     end
+  #   end
+  #   |> Enum.filter(fn x -> not is_nil(x) end)
+  #   |> Map.new
+  # end
+
+  defdi run do
+    %Params{login: "me", password: "myself"}
   end
 end
 
 defmodule User do
-  defstruct [:a, :b]
+  use Di
+  defstruct [:name]
 
-  def run %Params{} = p do
+  defdi run %Params{} = p do
     if p.login == "me" and p.password == "myself" do
-      %{name: "Thomas"}
+      %User{name: "Thomas"}
     else
       %{}
     end
@@ -125,19 +172,11 @@ end
 
 defmodule TryDi do
   use Di
-  
-  # defdi f(%Params{a: a}, %User{b: b}) do
-  #   1
-  # end
 
   defdi run(%User{} = u) do
     u.name
   end
 
-
-
-  # def t do
-  #   run TryDi, %{"param_login" => "me", "param_password" => "myself"}
-  # end
+  #TODO make defdi optional 
 end
 
