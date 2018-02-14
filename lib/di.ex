@@ -100,14 +100,12 @@ defmodule Run do
   def get_deps(mod) do
     for attr <- mod.__info__(:attributes) do
       attr
-      |> IO.inspect(label: :attr)
       |> case do
         {:deps, v} -> v
         _ -> []
       end
     end
     |> Enum.concat
-    |> IO.inspect(label: :deps)
   end
 
   def get_state(layers) do
