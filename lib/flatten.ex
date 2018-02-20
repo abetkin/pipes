@@ -4,27 +4,33 @@ defmodule Flatten do
   @max_iterations 1000
 
   def flatten(node, fun) when is_function(fun) do
+    flatten(node, fun, [])
+  end
+  
+  def flatten(node, fun, exclude) do
     opts = %{
       fun: fun,
-      result: [],
+      result: [exclude],
       iteration: 0,
     }
     nodes = fun.(node)
-    flatten(nodes, opts)
+    [_exclude | list] = flatten(nodes, opts)
+    list |> Enum.reverse
   end
 
   def make(result) do
-    result = result |> Enum.reduce(%{list: [], set: MapSet.new}, fn items, acc ->
+    result = result
+    |> Enum.reduce(%{list: [], set: MapSet.new}, fn items, acc ->
       item = items |> MapSet.new |> MapSet.difference(acc.set)
       %{
         list: [item |> MapSet.to_list | acc.list],
         set: acc.set |> MapSet.union(item)
       }
     end)
-    result.list |> Enum.reverse
+    result.list
   end
 
-  def flatten([], %{result: result}) do
+  def flatten([], %{result: result} = opts) do
     # build result
     make(result)
   end
@@ -34,7 +40,7 @@ defmodule Flatten do
   end
 
   def flatten(list, opts) when is_list(list) do
-    result = [list | opts.result] 
+    result = [list | opts.result]
     for node <- list do
       opts.fun.(node)
     end
