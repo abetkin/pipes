@@ -1,5 +1,8 @@
 defmodule Di.Raw do
-  defstruct []
+  defstruct [
+    :param_login,
+    :param_password,
+  ]
 end
 
 defmodule Di do
@@ -22,13 +25,11 @@ defmodule Di do
   end
 
   def __before_compile__(env) do
-    env |> IO.inspect(label: :env)
     info = env.module |> Module.get_attribute(:defdi)
     deps = for fun <- info do
       for arg <- fun.args do
-        %{struct: {mod_name, _}} = arg
-        arg |> IO.inspect(label: :arg)
-        Module.concat([mod_name])
+        %{struct: {aliases, _}} = arg
+        get_module(aliases, env)
       end
     end
     |> Enum.concat
@@ -36,19 +37,22 @@ defmodule Di do
   end
 
   def get_module(aliases, env) do
-    [name | _] = aliases
+    aliases = for al <- aliases do
+      al |> Atom.to_string
+    end
+    [name | aliases] = aliases
     env.aliases
-    |> Enum.map(fn al_name, mod ->
+    |> Enum.filter(fn {al, mod} ->
       [al_name] = al |> Module.split
       al_name == name
     end)
     |> case do
       [{name, mod}] ->
         mod |> Module.split
-        |> Enum.concat(aliases)
-        #TODO
-      _ -> Module.concat(aliases)
+      _ -> [name]
     end
+    |> Enum.concat(aliases)
+    |> Module.concat
   end
 
   def parse_arg {:=, _, [struct, var]} do
@@ -59,14 +63,15 @@ defmodule Di do
   
   def parse_arg {:%, _, [alias, map]} = struct do
     {:__aliases__, _, aliases} = alias
-    struct = get_module(aliases, env)
+    # struct = get_module(aliases, env)
     {:%{}, _, kv} = map
     # [a: {:a, [line: 77], nil}] = kv
     keys = for {k, v} <- kv do
       k
     end
     %{
-      struct: {struct, keys}
+      struct: {aliases, keys}
+      #TODO rename
     }
   end
 
@@ -115,21 +120,21 @@ defmodule Run do
     |> run(%{})
   end
 
+  def run(Raw, state) do
+    state[Raw]
+  end
+
   def run(mod, state) do
     layers = Flatten.flatten(mod, &get_deps/1, [[Raw]])
     layers
-    |> IO.inspect(label: :lrs)
     state = %{
       Raw => state,
     }
-    %{
+    state = get_state(%{
       layers: layers ++ [[mod]],
       state: state,
-    }
-    |> get_state
-    |> case do
-      state -> state[mod]
-    end
+    })
+    state[mod]
   end
 
   def get_deps(Raw), do: []
@@ -169,7 +174,13 @@ defmodule Run do
   def get_state(%{state: state, deps: deps}) do
     for mod <- deps do
       args = get_args(mod, state)
-      {mod, apply(mod, :run, args)}
+      state |> Map.has_key?(mod)
+      value = if state |> Map.has_key?(mod) do
+        state[mod]
+      else
+        apply(mod, :run, args)
+      end
+      {mod, value}
     end
     |> Map.new
   end
@@ -177,6 +188,7 @@ defmodule Run do
   def get_args(mod, state) do
     for m <- get_deps(mod) do
       state[m]
+      |> Map.put(:__struct__, m)
     end
   end
 

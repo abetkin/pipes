@@ -14,7 +14,27 @@ defmodule DiTest do
     
   end
 
+  
+
 
 
 end
 
+# defmodule A.B.C do
+
+#   defmodule E.D.F do
+    
+#   end
+  
+# end
+
+
+# defmodule GetModule do
+#   use ExUnit.Case
+#   alias A.B.C, as: ABC
+
+#   test "1" do
+#     Di.get
+#   end
+
+# end

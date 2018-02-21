@@ -9,15 +9,14 @@ defmodule Params1 do
   defdi run(%Raw{} = params) do
     for {k, v} <- Map.to_list(params) do
       k
-      |> IO.inspect(label: "k")
+      |> Atom.to_string
       |> case do
-        # :"param_" <> key -> {key, v}
         "param_" <> key -> {key, v}
         _ -> nil
       end
     end
     |> Enum.filter(&(not is_nil(&1)))
-    |> Map.new
+    |> Map.new(fn {k, v} -> {k |> String.to_atom, v} end)
   end
 end
 
@@ -27,10 +26,10 @@ defmodule User1 do
   alias Di.Raw, as: Raw
 
   defdi run(%Params1{} = p, %Raw{} = raw) do
-    raw
+    p
     |> case do
-      %{login: login, password: password} ->
-        %Params1{login: login, password: password}
+      %{login: "me", password: "myself"} ->
+        "Thomas"
       _ -> nil
     end
   end
@@ -47,7 +46,7 @@ defmodule RootTest do
 
   test "simple" do
     u = Di.run(User1, %{
-      params_login: "me",
+      param_login: "me",
       param_password: "myself",
     })
     assert u == "Thomas"
