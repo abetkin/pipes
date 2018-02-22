@@ -1,25 +1,25 @@
 defmodule Di.Raw do
-  defstruct [
-    :param_login,
-    :param_password,
-  ]
+  defstruct []
 end
 
 defmodule Di do
   # di - for dependency injection
 
+  alias Di.Raw, as: Raw #?
   
 
   defmacro __using__(_) do
     quote do
+      @main :run
       alias Di.Raw, as: Raw
       import Di
-      
+      # FIXME rm attribute
       Module.register_attribute __MODULE__, :defdi,
         accumulate: true
       Module.register_attribute __MODULE__, :deps,
         accumulate: true, persist: true
       @before_compile Di
+      
       
     end
   end
@@ -36,12 +36,20 @@ defmodule Di do
     Module.put_attribute(env.module, :deps, deps)
   end
 
+  def is_struct(mod) do
+    mod |> Map.from_struct |> Map.keys |> case do
+      [] -> false
+      _ -> true
+    end
+  end
+
+  # TODO do this at compile time only
   def get_module(aliases, env) do
     aliases = for al <- aliases do
       al |> Atom.to_string
     end
     [name | aliases] = aliases
-    env.aliases
+    env.aliases 
     |> Enum.filter(fn {al, mod} ->
       [al_name] = al |> Module.split
       al_name == name
@@ -53,55 +61,68 @@ defmodule Di do
     end
     |> Enum.concat(aliases)
     |> Module.concat
-  end
+end
 
-  def parse_arg {:=, _, [struct, var]} do
-    var = elem(var, 0)
-    parse_arg(struct)
-    |> Map.put(:var, var)
+  def parse_arg {:=, arg_opts, [struct, var]} = arg do
+    """
+    -> {new_arg, parsed_arg}
+    """
+    {new_struct, parsed} = parse_arg(struct)
+    parsed |> IO.inspect(label: :parsed)
+    parsed = parsed |> Map.put(:var, elem(var, 0))
+    new_arg = {:=, arg_opts, [new_struct, var]}
+    {new_arg, parsed}
   end
   
-  def parse_arg {:%, _, [alias, map]} = struct do
+  def parse_arg {:%, _, [alias, inner_map]} = arg do
     {:__aliases__, _, aliases} = alias
-    # struct = get_module(aliases, env)
-    {:%{}, _, kv} = map
+    mod = aliases |> get_module(__ENV__)
+    mod |> Module.split
+    |> IO.inspect(label: :mod)
+    |> case do
+      ["Di"] -> import IEx; IEx.pry
+      _o -> _o
+    end
+    {:%{}, _, kv} = inner_map
     # [a: {:a, [line: 77], nil}] = kv
     keys = for {k, v} <- kv do
       k
     end
-    %{
+    new_arg = mod |> is_struct |> case do
+      true -> arg
+      false -> inner_map
+    end
+    {new_arg, %{
       struct: {aliases, keys}
       #TODO rename
-    }
+    }}
   end
 
-  # def parse_arg {:%{}, _} do
-  #   a
-  #   |> IO.inspect
-  # end
-
   defmacro defdi(head, body) do
-    info = parse_declaration(head)
+    {new_head, parsed} = parse_declaration(head)
 
     quote do
-      @defdi unquote(info |> Macro.escape)
-      def(unquote(head), unquote(body))
+      @defdi unquote(parsed |> Macro.escape)
+      def(unquote(new_head), unquote(body))
     end
   end
 
   defp parse_declaration(head) do
-    {fun_name, _, args} = head
-    args = args |> case do
-      nil -> []
+    {fun_name, fun_opts, args} = head
+    {new_args, parsed_args} = args |> case do
+      nil -> {nil, []}
       _ -> 
         for arg <- args do
           parse_arg(arg)
         end
+        |> Enum.unzip
     end
-    %{
+    parsed = %{
       name: fun_name,
-      args: args,
+      args: parsed_args,
     }
+    new_head = {fun_name, fun_opts, new_args}
+    {new_head, parsed}
   end
 
   # def run(mod, dic) do
@@ -116,8 +137,7 @@ defmodule Run do
   alias Di.Raw, as: Raw
 
   def run(mod) do
-    mod
-    |> run(%{})
+    mod |> run(%{})
   end
 
   def run(Raw, state) do
@@ -156,11 +176,6 @@ defmodule Run do
       end
     end
     |> Enum.concat
-
-    # rescue _ ->
-    #   import IEx
-    #   IEx.pry
-    # end
   end
 
   def get_state(%{layers: layers, state: init_state} = opts) do
@@ -174,11 +189,17 @@ defmodule Run do
   def get_state(%{state: state, deps: deps}) do
     for mod <- deps do
       args = get_args(mod, state)
-      state |> Map.has_key?(mod)
-      value = if state |> Map.has_key?(mod) do
+      value = state |> Map.has_key?(mod)
+      |> if do
         state[mod]
       else
-        apply(mod, :run, args)
+        #FIXME
+        main = @main |> if do
+          @main
+        else
+          :run
+        end
+        apply(mod, main, args)
       end
       {mod, value}
     end
@@ -193,5 +214,3 @@ defmodule Run do
   end
 
 end
-
-
