@@ -1,20 +1,21 @@
-defmodule Di.Raw do
+defmodule Di.InitialState do
   defstruct []
 end
 
 defmodule Di do
   # di - for dependency injection
 
-  alias Di.Raw, as: Raw #?
-  
-
   defmacro __using__(_) do
     quote do
-      @main :run
-      alias Di.Raw, as: Raw
+      
+      
       import Di
       # FIXME rm attribute
-      Module.register_attribute __MODULE__, :defdi,
+      Module.register_attribute __MODULE__, :main, persist: true
+      @main :run
+
+
+      Module.register_attribute __MODULE__, :di,
         accumulate: true
       Module.register_attribute __MODULE__, :deps,
         accumulate: true, persist: true
@@ -25,7 +26,7 @@ defmodule Di do
   end
 
   def __before_compile__(env) do
-    info = env.module |> Module.get_attribute(:defdi)
+    info = env.module |> Module.get_attribute(:di)
     deps = for fun <- info do
       for arg <- fun.args do
         %{struct: {aliases, _}} = arg
@@ -68,7 +69,6 @@ end
     -> {new_arg, parsed_arg}
     """
     {new_struct, parsed} = parse_arg(struct)
-    parsed |> IO.inspect(label: :parsed)
     parsed = parsed |> Map.put(:var, elem(var, 0))
     new_arg = {:=, arg_opts, [new_struct, var]}
     {new_arg, parsed}
@@ -77,20 +77,16 @@ end
   def parse_arg {:%, _, [alias, inner_map]} = arg do
     {:__aliases__, _, aliases} = alias
     mod = aliases |> get_module(__ENV__)
-    mod |> Module.split
-    |> IO.inspect(label: :mod)
-    |> case do
-      ["Di"] -> import IEx; IEx.pry
-      _o -> _o
-    end
     {:%{}, _, kv} = inner_map
     # [a: {:a, [line: 77], nil}] = kv
     keys = for {k, v} <- kv do
       k
     end
-    new_arg = mod |> is_struct |> case do
-      true -> arg
-      false -> inner_map
+    new_arg = mod |> is_struct 
+    |> if do
+      arg
+    else
+      inner_map
     end
     {new_arg, %{
       struct: {aliases, keys}
@@ -98,11 +94,11 @@ end
     }}
   end
 
-  defmacro defdi(head, body) do
+  defmacro di(head, body) do
     {new_head, parsed} = parse_declaration(head)
 
     quote do
-      @defdi unquote(parsed |> Macro.escape)
+      @di unquote(parsed |> Macro.escape)
       def(unquote(new_head), unquote(body))
     end
   end
@@ -134,21 +130,21 @@ end
 
 
 defmodule Run do
-  alias Di.Raw, as: Raw
+  
 
   def run(mod) do
     mod |> run(%{})
   end
 
-  def run(Raw, state) do
-    state[Raw]
-  end
+  # def run(InitialState, state) do
+  #   state[InitialState]
+  # end
 
   def run(mod, state) do
-    layers = Flatten.flatten(mod, &get_deps/1, [[Raw]])
-    layers
+    layers = Flatten.flatten(mod, &get_deps/1, [Pipeline, InitialState])
+
     state = %{
-      Raw => state,
+      InitialState => state,
     }
     state = get_state(%{
       layers: layers ++ [[mod]],
@@ -157,17 +153,10 @@ defmodule Run do
     state[mod]
   end
 
-  def get_deps(Raw), do: []
+  def get_deps(Pipeline), do: []
+  def get_deps(InitialState), do: []
 
   def get_deps(mod) do
-    # mod = Module.split(mod) |> List.last
-    # |> case do
-    #   "Raw" ->
-    #     import IEx; IEx.pry
-    #     []
-    #   _ -> mod
-    # end
-
     for attr <- mod.__info__(:attributes) do
       attr
       |> case do
@@ -186,19 +175,22 @@ defmodule Run do
     end)
   end
 
-  def get_state(%{state: state, deps: deps}) do
+  def get_state(%{state: state, deps: deps} = g) do
     for mod <- deps do
-      args = get_args(mod, state)
+      # args = get_args(mod, state)
+      args = for m <- get_deps(mod) do
+        get_struct(m, state)
+      end
       value = state |> Map.has_key?(mod)
       |> if do
         state[mod]
       else
-        #FIXME
-        main = @main |> if do
-          @main
-        else
-          :run
-        end
+        main = mod.__info__(:attributes)
+        |> Enum.map(fn
+          {:main, [v]} -> v
+          _ -> nil
+        end)
+        |> Enum.find(fn x -> x end)
         apply(mod, main, args)
       end
       {mod, value}
@@ -206,11 +198,16 @@ defmodule Run do
     |> Map.new
   end
 
-  def get_args(mod, state) do
-    for m <- get_deps(mod) do
-      state[m]
-      |> Map.put(:__struct__, m)
-    end
+  def get_struct Pipeline, state do
+    %Pipeline{components: state}
+  end
+
+  def get_struct InitialState, state do
+    state[InitialState]
+  end
+
+  def get_struct(m, state) do
+    state[m] |> Map.put(:__struct__, m)
   end
 
 end

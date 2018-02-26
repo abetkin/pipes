@@ -2,11 +2,11 @@
 
 defmodule Params1 do
   use Di
-  alias Di.Raw, as: Raw
+  
   defstruct [:login, :password] # TODO
 
 
-  defdi run(%Raw{} = params) do
+  di run(%InitialState{} = params) do
     for {k, v} <- Map.to_list(params) do
       k
       |> Atom.to_string
@@ -23,9 +23,9 @@ end
 
 defmodule User1 do
   use Di
-  alias Di.Raw, as: Raw
+  
 
-  defdi run(%Params1{} = p, %Raw{} = raw) do
+  di run(%Params1{} = p, %InitialState{} = raw) do
     p
     |> case do
       %{login: "me", password: "myself"} ->

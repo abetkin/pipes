@@ -10,17 +10,17 @@ defmodule Flatten do
   def flatten(node, fun, exclude) do
     opts = %{
       fun: fun,
-      result: [exclude],
+      result: [],
       iteration: 0,
     }
     nodes = fun.(node)
-    [_exclude | list] = flatten(nodes, opts)
-    list |> Enum.reverse
+    list = flatten(nodes, opts)
+    |> prepare(exclude)
   end
 
-  def make(result) do
+  def prepare(result, exclude) do
     result = result
-    |> Enum.reduce(%{list: [], set: MapSet.new}, fn items, acc ->
+    |> Enum.reduce(%{list: [], set: MapSet.new(exclude)}, fn items, acc ->
       item = items |> MapSet.new |> MapSet.difference(acc.set)
       %{
         list: [item |> MapSet.to_list | acc.list],
@@ -28,11 +28,16 @@ defmodule Flatten do
       }
     end)
     result.list
+    |> Enum.filter(fn
+      [] -> false
+      _ -> true
+    end)
+    |> Enum.reverse    
   end
 
-  def flatten([], %{result: result} = opts) do
-    # build result
-    make(result)
+
+  def flatten([], %{result: result}) do
+    result
   end
 
   def flatten(list, %{iteration: iteration}) when iteration == @max_iterations do
