@@ -3,12 +3,11 @@ defmodule Di.InitialState do
 end
 
 defmodule Di do
-  # di - for dependency injection
+  # def - for dependency injection
 
   defmacro __using__(_) do
     quote do
-      
-      
+      import Kernel, except: [def: 2]
       import Di
       # FIXME rm attribute
       Module.register_attribute __MODULE__, :main, persist: true
@@ -94,12 +93,12 @@ end
     }}
   end
 
-  defmacro di(head, body) do
+  defmacro def(head, body) do
     {new_head, parsed} = parse_declaration(head)
 
     quote do
       @di unquote(parsed |> Macro.escape)
-      def(unquote(new_head), unquote(body))
+      Kernel.def(unquote(new_head), unquote(body))
     end
   end
 

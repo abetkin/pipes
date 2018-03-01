@@ -16,7 +16,7 @@ defmodule Params do
   #   |> Map.new
   # end
 
-  di run do
+  def run do
     %Params{login: "me", password: "myself"}
   end
 end
@@ -25,7 +25,7 @@ defmodule User do
   use Di
   defstruct [:name]
 
-  di run %Params{} = p do
+  def run %Params{} = p do
     if p.login == "me" and p.password == "myself" do
       %User{name: "Thomas"}
     else
@@ -39,11 +39,11 @@ end
 defmodule TryDi do
   use Di
 
-  di run(%User{} = u) do
+  def run(%User{} = u) do
     u.name
   end
 
-  #TODO make di optional 
+  #TODO make def optional 
 end
 
 

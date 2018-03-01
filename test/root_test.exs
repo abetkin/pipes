@@ -6,7 +6,7 @@ defmodule Params1 do
   defstruct [:login, :password] # TODO
 
 
-  di run(%InitialState{} = params) do
+  def run(%InitialState{} = params) do
     for {k, v} <- Map.to_list(params) do
       k
       |> Atom.to_string
@@ -25,7 +25,7 @@ defmodule User1 do
   use Di
   
 
-  di run(%Params1{} = p, %InitialState{} = raw) do
+  def run(%Params1{} = p, %InitialState{} = raw) do
     p
     |> case do
       %{login: "me", password: "myself"} ->

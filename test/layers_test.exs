@@ -4,7 +4,7 @@ defmodule A do
   defstruct []
   use Di 
 
-  di run do
+  def run do
     
   end
 end
@@ -14,7 +14,7 @@ defmodule B do
 
   defstruct []
 
-  di run %A{} do
+  def run %A{} do
     
   end
 end
@@ -24,7 +24,7 @@ defmodule C do
 
   defstruct []
 
-  di run %A{} = a, %B{} = b do
+  def run %A{} = a, %B{} = b do
     
   end
 end
@@ -34,7 +34,7 @@ defmodule D do
 
   defstruct []
 
-  di run %C{} = c do
+  def run %C{} = c do
     
   end
 end

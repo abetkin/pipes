@@ -4,7 +4,7 @@
 defmodule Comp do
   use Di
 
-  di run %Pipeline{} = pp do
+  def run %Pipeline{} = pp do
     pp |> Pipeline.get_initial |> case do
       %{"a" => "b"} -> :ok
     end
@@ -23,6 +23,9 @@ defmodule PipelineTest do
     end
   end
 
+  # test "2" do
+    
+  # end
     
 end
 
