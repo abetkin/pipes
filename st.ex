@@ -12,3 +12,9 @@ end
 defmodule S do
   use Struct.Vanilla
 end
+
+defmodule M do
+  def f(x) when true do
+    x
+  end
+end

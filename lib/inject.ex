@@ -3,7 +3,6 @@ defmodule Inject.InitialState do
 end
 
 defmodule Inject do
-  # def - for dependency injection
 
   defmacro __using__(_) do
     quote do
@@ -11,19 +10,19 @@ defmodule Inject do
       import Inject
       # FIXME rm attribute
       Module.register_attribute __MODULE__, :main, persist: true
-      @main :run
+      @main :main
 
 
-      Module.register_attribute __MODULE__, :di,
+      Module.register_attribute __MODULE__, :inject,
         accumulate: true
-      Module.register_attribute __MODULE__, :deps,
+      Module.register_attribute __MODULE__, :injections,
         accumulate: true, persist: true
       @before_compile Inject
     end
   end
 
   def __before_compile__(env) do
-    info = env.module |> Module.get_attribute(:di)
+    info = env.module |> Module.get_attribute(:inject)
     deps = for fun <- info do
       for arg <- fun.args do
         %{struct: {aliases, _}} = arg
@@ -31,7 +30,7 @@ defmodule Inject do
       end
     end
     |> Enum.concat
-    Module.put_attribute(env.module, :deps, deps)
+    Module.put_attribute(env.module, :injections, deps)
   end
 
   def is_struct(mod) do
@@ -95,7 +94,7 @@ end
     {new_head, parsed} = parse_declaration(head)
 
     quote do
-      @di unquote(parsed |> Macro.escape)
+      @inject unquote(parsed |> Macro.escape)
       Kernel.def(unquote(new_head), unquote(body))
     end
   end

@@ -20,6 +20,14 @@ defmodule Def1 do
   def f3(a), inject(%Injection{} = b) when a + b < 1 do
     b
   end
+
+  """
+  <=>
+  def f3(%Pipeline{injections: {Injection: b}} = pp, a) when ...
+    b
+  end
+  """
+  end
 end
 
 
