@@ -1,0 +1,9 @@
+{application,pipes,
+             [{applications,[kernel,stdlib,elixir,logger]},
+              {description,"pipes"},
+              {modules,['Elixir.Flatten','Elixir.InitialState',
+                        'Elixir.Inject','Elixir.Inject.InitialState',
+                        'Elixir.Pipeline','Elixir.Run']},
+              {registered,[]},
+              {vsn,"0.1.0"},
+              {extra_applications,[logger]}]}.

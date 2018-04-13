@@ -1,7 +1,7 @@
 
 
 defmodule Params do
-  use Di
+  use Inject
   defstruct [:login, :password] # TODO
 
   # def run %{} = dic do
@@ -22,7 +22,7 @@ defmodule Params do
 end
 
 defmodule User do
-  use Di
+  use Inject
   defstruct [:name]
 
   def run %Params{} = p do
@@ -32,18 +32,18 @@ defmodule User do
       %{}
     end
   end
- 
+
 end
 
 
 defmodule TryDi do
-  use Di
+  use Inject
 
   def run(%User{} = u) do
     u.name
   end
 
-  #TODO make def optional 
+  #TODO make def optional
 end
 
 

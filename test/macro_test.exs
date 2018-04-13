@@ -1,7 +1,7 @@
 
 defmodule A1 do
   defstruct []
-  use Di
+  use Inject
 
   def run do
     :A
@@ -10,7 +10,7 @@ end
 
 defmodule B1 do
   defstruct []
-  use Di
+  use Inject
 
   def run %A1{} = a do
     a = :A
@@ -34,8 +34,8 @@ defmodule MacroTest do
   end
 
   # test "2" do
-    
+
   # end
-    
+
 end
 

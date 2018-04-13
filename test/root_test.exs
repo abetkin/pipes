@@ -1,8 +1,8 @@
 
 
 defmodule Params1 do
-  use Di
-  
+  use Inject
+
   defstruct [:login, :password] # TODO
 
 
@@ -22,8 +22,8 @@ end
 
 
 defmodule User1 do
-  use Di
-  
+  use Inject
+
 
   def run(%Params1{} = p, %InitialState{} = raw) do
     p
@@ -45,12 +45,12 @@ defmodule RootTest do
   end
 
   test "simple" do
-    u = Di.run(User1, %{
+    u = Inject.run(User1, %{
       param_login: "me",
       param_password: "myself",
     })
     assert u == "Thomas"
-    
+
   end
 
 

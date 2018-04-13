@@ -1,14 +1,14 @@
-defmodule Di.InitialState do
+defmodule Inject.InitialState do
   defstruct []
 end
 
-defmodule Di do
+defmodule Inject do
   # def - for dependency injection
 
   defmacro __using__(_) do
     quote do
       import Kernel, except: [def: 2]
-      import Di
+      import Inject
       # FIXME rm attribute
       Module.register_attribute __MODULE__, :main, persist: true
       @main :run
@@ -18,9 +18,7 @@ defmodule Di do
         accumulate: true
       Module.register_attribute __MODULE__, :deps,
         accumulate: true, persist: true
-      @before_compile Di
-      
-      
+      @before_compile Inject
     end
   end
 
@@ -49,13 +47,13 @@ defmodule Di do
       al |> Atom.to_string
     end
     [name | aliases] = aliases
-    env.aliases 
+    env.aliases
     |> Enum.filter(fn {al, mod} ->
       [al_name] = al |> Module.split
       al_name == name
     end)
     |> case do
-      [{name, mod}] ->
+      [{_name, mod}] ->
         mod |> Module.split
       _ -> [name]
     end
@@ -72,7 +70,7 @@ end
     new_arg = {:=, arg_opts, [new_struct, var]}
     {new_arg, parsed}
   end
-  
+
   def parse_arg {:%, _, [alias, inner_map]} = arg do
     {:__aliases__, _, aliases} = alias
     mod = aliases |> get_module(__ENV__)
@@ -81,7 +79,7 @@ end
     keys = for {k, v} <- kv do
       k
     end
-    new_arg = mod |> is_struct 
+    new_arg = mod |> is_struct
     |> if do
       arg
     else
@@ -106,7 +104,7 @@ end
     {fun_name, fun_opts, args} = head
     {new_args, parsed_args} = args |> case do
       nil -> {nil, []}
-      _ -> 
+      _ ->
         for arg <- args do
           parse_arg(arg)
         end
@@ -129,7 +127,7 @@ end
 
 
 defmodule Run do
-  
+
 
   def run(mod) do
     mod |> run(%{})

@@ -2,7 +2,7 @@
 
 
 defmodule Comp do
-  use Di
+  use Inject
 
   def run %Pipeline{} = pp do
     pp |> Pipeline.get_initial |> case do
@@ -24,8 +24,8 @@ defmodule PipelineTest do
   end
 
   # test "2" do
-    
+
   # end
-    
+
 end
 
