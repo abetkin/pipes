@@ -43,5 +43,17 @@ end
 
 
 # pln |> M.f(3, 4, 4)
-M.f(3, 5)
-|> IO.inspect(label: "f")
+quote do
+  def %Pipeline{injections: %{"Mod" => %Mod{x: x}}} do
+    x
+  end
+end
+|> IO.inspect(label: :p)
+
+
+quote do
+  def %Mod{x: x} do
+    x
+  end
+end
+|> IO.inspect(label: :reg)
